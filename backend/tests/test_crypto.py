@@ -21,6 +21,10 @@ from .test_documents import run_workers, settle, upload
 from .test_extraction import INVOICE_TEXT, pdf_with_lines
 from .test_search import ConceptEmbedding, drain, search, titles
 
+# Probe once at import. sqlite-vec keeps a global pointer to the SQLite that loaded it last, so probing with
+# stdlib sqlite3 in the middle of a SQLCipher test would crash the next vector query.
+HAS_VEC = vec_available()
+
 PASS = "correct horse battery staple"
 SECRET_WORD = "zxqvortexmarker"
 
@@ -146,7 +150,7 @@ def test_encrypt_in_place_keeps_everything_working_and_hides_content(tmp_path, k
     assert tc.get("/api/v1/health").json()["capabilities"]["encrypted"] is True and tc.get("/api/v1/health").json()["db"]["ok"]
     assert {d["title"] for d in tc.get("/api/v1/documents").json()["items"]} == {"inv", "note"}
     assert titles(search(tc, SECRET_WORD, mode="keyword")) == ["note"]  # FTS rebuilt from the copied chunks
-    if vec_available():  # python.org macOS builds cannot load sqlite-vec
+    if HAS_VEC:  # python.org macOS builds cannot load sqlite-vec
         assert titles(search(tc, "automobile", mode="meaning"))[0] == "note"  # vectors survived the copy
     assert search(tc, "Acme Traders")["results"][0]["field_hits"][0]["key"] == "customer"  # field_fts too
     assert tc.get(f"/api/v1/documents/{ids[0]}").json()["tags"] == ["finance"] and tc.get(f"/api/v1/documents/{ids[0]}/file").status_code == 200
