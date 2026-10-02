@@ -209,12 +209,25 @@ class SearchService:
             out.append(r)
         return out
 
+    def _infer_type(self, text: str, parsed: dict) -> str:
+        """Turn a bare document-type word ("invoices", or "invoice" next to another filter) into a type filter."""
+        with self.db.read() as c:
+            names = [r["name"] for r in c.execute("SELECT name FROM document_types")]
+        for name in names:
+            m = re.search(r"\b" + re.escape(name) + r"(s?)\b", text, re.I)
+            if m and (m.group(1) or parsed):
+                parsed["type"] = name.lower()
+                return re.sub(r"\s+", " ", text[:m.start()] + " " + text[m.end():]).strip()
+        return text
+
     def search(self, q: str, filters: dict | None = None, *, mode: str = "best", limit: int = 20,
                parse: bool = True) -> dict:
         if mode not in ("best", "keyword", "meaning"):
             raise AppError("mode must be best, keyword or meaning", code="invalid_mode")
         limit = max(1, min(limit, 5000))  # the HTTP route caps interactive searches at 100
         parsed, text = parse_query(q) if parse else ({}, q.strip())
+        if parse and "type" not in parsed:
+            text = self._infer_type(text, parsed)
         active = {**parsed, **(filters or {})}
         where, params = self._filter_sql(active)
         filtered = len(active) > 0

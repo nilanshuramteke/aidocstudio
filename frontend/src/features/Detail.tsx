@@ -33,7 +33,7 @@ export function Detail({ id, onBack, initialPage = 1, onOpenCitation, onOpenEnti
   return (
     <div>
       <button onClick={onBack}>← Documents</button>
-      <h1 style={{ fontSize: 20 }}>{doc.title}</h1>
+      <h1>{doc.title}</h1>
       <p style={{ color: "var(--text-muted)" }}>
         {doc.original_name} · {doc.state}{doc.state_detail?.error ? ` · ${doc.state_detail.error}` : ""}
       </p>
@@ -48,6 +48,8 @@ export function Detail({ id, onBack, initialPage = 1, onOpenCitation, onOpenEnti
         <input placeholder="Find in page text…" aria-label="Find in page" value={find}
           onChange={(e) => setFind(e.target.value)} style={{ margin: "var(--s3) 0", padding: "var(--s2)" }} />
       )}
+      <div className="split">
+      <div className="viewer">
       {pages > 0 && !noImage && (
         <div style={{ position: "relative", display: "inline-block", maxWidth: "100%", marginTop: "var(--s3)" }}>
           <img alt={`Page ${page}`} src={`/api/v1/documents/${id}/pages/${page}/image?w=900`}
@@ -59,12 +61,16 @@ export function Detail({ id, onBack, initialPage = 1, onOpenCitation, onOpenEnti
         </div>
       )}
       {noImage && <pre style={{ whiteSpace: "pre-wrap", background: "var(--surface)", padding: "var(--s4)" }}>{text ?? "…"}</pre>}
+      </div>
+      <aside className="side">
       <Fields docId={id} version={doc.state} />
       <Related docId={id} version={doc.state} onOpenDoc={(d) => onOpenCitation?.(d, 1)} onOpenEntity={(e) => onOpenEntity?.(e)} />
       <h2 style={{ fontSize: 16 }}>Ask about this document</h2>
       <Ask documentIds={[id]} placeholder="Ask about this document…"
         onOpenCitation={(d, p) => (d === id ? setPage(p) : onOpenCitation?.(d, p))} />
       <p><a href={`/api/v1/documents/${id}/file`} target="_blank" rel="noreferrer">Open original</a></p>
+      </aside>
+      </div>
     </div>
   );
 }

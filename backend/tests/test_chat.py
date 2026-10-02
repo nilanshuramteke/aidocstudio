@@ -255,3 +255,13 @@ def test_compare_requires_model(config):
         assert client.post("/api/v1/chat/compare", json={"document_ids": ["a", "b"]}).status_code == 503
     finally:
         client.__exit__(None, None, None)
+
+
+def test_citation_after_the_full_stop_counts_for_that_sentence():
+    from adstudio.ai.faithfulness import check_answer
+    src = {1: "Either party may end this lease with ninety days written notice."}
+    for ans in ("Either party may end this lease with ninety days written notice. [S1]",
+                "Either party may end this lease with ninety days written notice.\n[S1]"):
+        c = check_answer(ans, src)
+        assert c.warnings == [] and c.used == [1], (ans, c.warnings)
+    assert check_answer("The notice period is 30 days. [S1]", src).warnings  # still catches a wrong figure

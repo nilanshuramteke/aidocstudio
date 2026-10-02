@@ -3,6 +3,7 @@ import re
 import shutil
 import sqlite3
 import threading
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -122,9 +123,17 @@ class Database:
                 self._readers.append(conn)
         yield conn
 
-    def integrity_ok(self) -> bool:
-        with self.read() as c:
-            return c.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+    def integrity_ok(self, max_age_s: float = 600.0) -> bool:
+        """quick_check is O(database size) and reports false errors for FTS5 tables read mid-write, so it runs
+        while holding the writer lock (no write in flight) and the result is cached for `max_age_s`."""
+        now = time.monotonic()
+        cached = getattr(self, "_integrity", None)
+        if cached and now - cached[0] < max_age_s:
+            return cached[1]
+        with self._wlock:
+            ok = self._writer.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+        self._integrity = (now, ok)
+        return ok
 
     def close(self) -> None:
         with self._wlock:

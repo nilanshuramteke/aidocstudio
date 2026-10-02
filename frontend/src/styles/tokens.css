@@ -156,3 +156,16 @@ tr[style*="border-top"] { border-top: 0 !important; }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 @media (max-width: 860px) { .app { grid-template-columns: 1fr; } .rail { position: static; height: auto; flex-direction: row; flex-wrap: wrap; padding: var(--s3); } .nav { flex-direction: row; flex-wrap: wrap; } .rail-foot { display: none; } }
+
+.brand-logo { width: 34px; height: 34px; object-fit: contain; flex: none; filter: drop-shadow(0 4px 10px var(--ring)); }
+.lockcard img { max-width: 100%; height: auto; }
+
+svg { flex: none; }
+.hero-search svg, .rail-foot svg, .cmdk-hint svg { width: 18px; height: 18px; color: var(--text-muted); }
+.rail-foot button.ghost { display: flex; align-items: center; justify-content: flex-start; width: 100%; padding: 8px var(--s3); }
+
+.split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1fr); gap: var(--s6); align-items: start; }
+.viewer img { box-shadow: var(--shadow-2); border-radius: 6px; }
+.side { position: sticky; top: var(--s5); max-height: calc(100vh - 2 * var(--s5)); overflow: auto; padding-right: 4px; }
+.side > h2:first-child { margin-top: 0 !important; }
+@media (max-width: 1100px) { .split { grid-template-columns: 1fr; } .side { position: static; max-height: none; } }

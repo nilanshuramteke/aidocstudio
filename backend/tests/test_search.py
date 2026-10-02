@@ -120,6 +120,13 @@ def test_filters_parsed_and_applied(client, corpus):
     assert r2["results"] == []
 
 
+def test_bare_type_word_becomes_a_type_chip(client, corpus):
+    r = search(client, "invoices above 50,000")
+    assert titles(r) == ["abc-invoice"] and r["parsed_filters"]["type"] == "invoice" and r["text"] == ""
+    assert search(client, "invoices")["parsed_filters"] == {"type": "invoice"}
+    assert "type" not in search(client, "invoice")["parsed_filters"]  # singular on its own stays a plain keyword
+
+
 def test_soft_deleted_documents_leave_search(client, corpus):
     assert titles(search(client, "warehouse"))
     client.delete(f"/api/v1/documents/{corpus['lease']}")
@@ -268,3 +275,4 @@ def test_recall_at_10_on_synthetic_queries(client):
         r = search(client, q, limit=10)
         hits += any(x["document"]["id"] == ids[name] for x in r["results"])
     assert hits / len(topics) >= 0.9  # recall@10
+

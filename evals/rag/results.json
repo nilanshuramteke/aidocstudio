@@ -3,6 +3,6 @@
   "answer_correct": 1.0,
   "citation_accuracy": 1.0,
   "abstention_rate": 1.0,
-  "warning_rate": 0.4,
-  "seconds": 60.7
+  "warning_rate": 0.2,
+  "seconds": 48.8
 }

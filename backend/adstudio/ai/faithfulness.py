@@ -52,6 +52,17 @@ def strip_citations(s: str) -> str:
     return re.sub(r"\s{2,}", " ", _CITE.sub("", s)).strip()
 
 
+def _sentences(text: str) -> list[str]:
+    """Split into sentences, attaching a citation-only fragment ("... notice. [S1]") to the sentence before it."""
+    out: list[str] = []
+    for part in filter(None, (p.strip() for p in _SENT.split(text))):
+        if out and not strip_citations(part):
+            out[-1] += " " + part
+        else:
+            out.append(part)
+    return out
+
+
 def check_answer(answer: str, sources: dict[int, str]) -> Checked:
     """`sources` maps S-number -> chunk text. Returns the cleaned answer, used source numbers, and warnings."""
     text = answer.strip()
@@ -60,7 +71,7 @@ def check_answer(answer: str, sources: dict[int, str]) -> Checked:
     used: list[int] = []
     warnings: list[dict] = []
     kept: list[str] = []
-    for raw in filter(None, (s.strip() for s in _SENT.split(text))):
+    for raw in _sentences(text):
         nums = _cited_numbers(raw)
         bad = [n for n in nums if n not in sources]
         good = [n for n in nums if n in sources]

@@ -49,7 +49,7 @@ function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
   return (
     <div className="lockscreen" role="dialog" aria-modal="true" aria-label="Locked">
       <form className="lockcard" onSubmit={submit}>
-        <div className="brand-mark" style={{ margin: "0 auto var(--s4)" }} />
+        <img src="/assets/logo.png" alt="AI Document Intelligence Studio" width={150} height={150} style={{ display: "block", margin: "0 auto var(--s3)" }} />
         <h1 style={{ fontSize: "22px" }}>Doc Studio is locked</h1>
         <p style={{ color: "var(--text-muted)", margin: "6px 0 0" }}>Enter your passphrase to continue.</p>
         <input ref={ref} type="password" aria-label="Passphrase" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="Passphrase" />
@@ -168,7 +168,7 @@ export function App() {
   return (
     <div className="app">
       <aside className="rail">
-        <div className="brand"><span className="brand-mark" />Doc Studio</div>
+        <div className="brand"><img className="brand-logo" src="/assets/mark.png" alt="" width={34} height={34} />Doc Studio</div>
         <button className="cmdk-hint" onClick={() => setPaletteOpen(true)} aria-label="Open command palette">
           <span>Search or jump to…</span><kbd>Ctrl K</kbd>
         </button>

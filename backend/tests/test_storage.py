@@ -73,3 +73,35 @@ def test_ids_sortable_unique():
     assert len(set(ids)) == 2000
     assert ids == sorted(ids)
     assert all(len(i) == 26 for i in ids)
+
+
+def test_integrity_check_waits_for_in_flight_writes_and_is_cached(tmp_path):
+    import threading
+    import time
+    db = Database(tmp_path / "t.sqlite")
+    db.migrate()
+    in_tx, release, finished = threading.Event(), threading.Event(), []
+
+    def writer():
+        with db.write() as c:
+            c.execute("INSERT INTO audit_log(at, action) VALUES ('t', 'x')")
+            in_tx.set()
+            release.wait(5)
+
+    def checker():
+        db.integrity_ok(max_age_s=0)
+        finished.append(time.monotonic())
+
+    w = threading.Thread(target=writer)
+    w.start()
+    in_tx.wait(5)
+    t = threading.Thread(target=checker)
+    t.start()
+    time.sleep(0.3)
+    assert not finished  # blocked while a write is in flight, so it can never see half-written FTS pages
+    release.set()
+    w.join()
+    t.join(5)
+    assert finished
+    assert db.integrity_ok() and db.integrity_ok()  # second call served from cache
+    db.close()
