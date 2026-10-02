@@ -15,6 +15,7 @@ from adstudio.core.security import COOKIE_NAME
 from adstudio.main import run as cli
 from adstudio.ops import backup as bk
 from adstudio.storage import crypt
+from adstudio.storage.db import vec_available
 
 from .test_documents import run_workers, settle, upload
 from .test_extraction import INVOICE_TEXT, pdf_with_lines
@@ -145,7 +146,8 @@ def test_encrypt_in_place_keeps_everything_working_and_hides_content(tmp_path, k
     assert tc.get("/api/v1/health").json()["capabilities"]["encrypted"] is True and tc.get("/api/v1/health").json()["db"]["ok"]
     assert {d["title"] for d in tc.get("/api/v1/documents").json()["items"]} == {"inv", "note"}
     assert titles(search(tc, SECRET_WORD, mode="keyword")) == ["note"]  # FTS rebuilt from the copied chunks
-    assert titles(search(tc, "automobile", mode="meaning"))[0] == "note"  # vectors survived the copy
+    if vec_available():  # python.org macOS builds cannot load sqlite-vec
+        assert titles(search(tc, "automobile", mode="meaning"))[0] == "note"  # vectors survived the copy
     assert search(tc, "Acme Traders")["results"][0]["field_hits"][0]["key"] == "customer"  # field_fts too
     assert tc.get(f"/api/v1/documents/{ids[0]}").json()["tags"] == ["finance"] and tc.get(f"/api/v1/documents/{ids[0]}/file").status_code == 200
     new = upload(tc, "later.txt", b"added after encryption works fine")["document_id"]  # write path, queue, workers, triggers
