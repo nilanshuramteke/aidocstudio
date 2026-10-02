@@ -9,8 +9,9 @@ COPY frontend/ ./
 RUN npm run build            # vite writes to ../backend/adstudio/static
 
 FROM python:3.11-slim
-# libglib2.0-0: needed by OpenCV at import time on slim images
-RUN apt-get update && apt-get install -y --no-install-recommends libglib2.0-0 \
+# OpenCV needs these at import time on slim images. rapidocr depends on the full opencv-python (not the headless
+# build), which links libGL and X11/xcb (libgl1 brings in libxcb1).
+RUN apt-get update && apt-get install -y --no-install-recommends libglib2.0-0 libgl1 libxcb1 \
     && rm -rf /var/lib/apt/lists/*
 COPY backend/ /app/backend/
 COPY --from=web /src/backend/adstudio/static /app/backend/adstudio/static
