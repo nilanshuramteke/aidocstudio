@@ -5,6 +5,7 @@
 <p align="center"><b>Private, local AI for your documents.</b><br>OCR, evidence-backed field extraction, hybrid search and cited answers. Everything runs on your machine, and nothing is uploaded.</p>
 
 <p align="center">
+  <a href="https://github.com/nilanshuramteke/aidocstudio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nilanshuramteke/aidocstudio/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="React + TypeScript" src="https://img.shields.io/badge/React-TypeScript-61DAFB?logo=react&logoColor=black">
@@ -156,7 +157,7 @@ paperless-ngx is excellent for archiving and tagging. This project is aimed at e
 - Not built: LAN / multi-user mode, plugin loader, auto-updater, system tray, installer packaging, LLM reranker.
 - Evals use a handful of clean documents; they have not been run on messy real-world scans.
 - Docker is not supported: the server deliberately binds to loopback only, and a LAN/container mode is not built.
-- Only tested on Windows so far; the CI matrix includes Linux and macOS, which has not been verified.
+- Developed on Windows; CI runs the test suite on Windows, Linux and macOS (macOS has no semantic search with the python.org Python, see Quick start).
 
 ## License
 
