@@ -36,29 +36,56 @@ def _new_passphrase() -> str:
     return first
 
 
+def _is_loopback(host: str) -> bool:
+    return host in ("127.0.0.1", "localhost", "::1")
+
+
+def _extra_hosts(value: str) -> set[str]:
+    """ADSTUDIO_ALLOWED_HOSTS="nas.local,192.168.1.20" -> extra Host header names (no ports)."""
+    return {h.strip().lower() for h in value.split(",") if h.strip()}
+
+
 def serve(args, config: Config) -> None:
     import uvicorn
 
     from .api.app import create_app
     from .core.container import build_container
 
+    host = args.host or os.environ.get("ADSTUDIO_HOST") or "127.0.0.1"
+    exposed = not _is_loopback(host)
+    token = os.environ.get("ADSTUDIO_ACCESS_TOKEN", "")
+    if exposed and len(token) < 24:  # fail closed: never listen beyond loopback without a secret
+        raise AppError("Listening on a non-loopback address (Docker, LAN) requires ADSTUDIO_ACCESS_TOKEN, "
+                       "a secret of at least 24 characters. Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(32))\"",
+                       code="access_token_required")
     key = None
     if crypt.is_encrypted(config.data_root):
         key = crypt.get_key(config.data_root, interactive=sys.stdin.isatty(), remember=args.remember)
-    port = args.port or config.port or _free_port()
+    port = args.port or config.port or int(os.environ.get("ADSTUDIO_PORT") or 0) or (8765 if exposed else _free_port())
     container = build_container(config, key=key)
     app = create_app(container)
-    url = f"http://127.0.0.1:{port}/?t={container.auth.issue_one_time()}"
-    print(f"AI Document Studio running. Open: {url}", flush=True)
-    if not args.no_browser:
-        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
+    if exposed:
+        container.auth.access_token = token
+        container.auth.allowed_hosts |= _extra_hosts(os.environ.get("ADSTUDIO_ALLOWED_HOSTS", ""))
+        roots = [(config.data_root / "inbox").resolve()]
+        roots += [Path(r).resolve() for r in os.environ.get("ADSTUDIO_IMPORT_ROOTS", "").split(os.pathsep) if r]
+        app.state.import_roots = roots  # the server-side path import may only read these folders
+        print(f"AI Document Studio listening on {host}:{port}. Open http://localhost:{port}/?t=<your ADSTUDIO_ACCESS_TOKEN> "
+              f"once per browser to sign in. Traffic is plain HTTP: put a TLS reverse proxy in front for anything beyond a trusted network.",
+              flush=True)
+    else:
+        url = f"http://127.0.0.1:{port}/?t={container.auth.issue_one_time()}"
+        print(f"AI Document Studio running. Open: {url}", flush=True)
+        if not args.no_browser:
+            threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+    uvicorn.run(app, host=host, port=port, log_level="warning")
 
 
 def run(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="adstudio", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--data-dir", type=Path, default=None)
     p.add_argument("--port", type=int, default=None)
+    p.add_argument("--host", default=None, help="address to listen on (default 127.0.0.1; anything else needs ADSTUDIO_ACCESS_TOKEN)")
     p.add_argument("--no-browser", action="store_true")
     p.add_argument("--remember", action="store_true", help="cache the derived key in the OS keychain")
     sub = p.add_subparsers(dest="cmd")

@@ -1,0 +1,29 @@
+# docker compose up -d --build
+# Needs a .env file next to this one (copy .env.example). The app refuses to start without ADSTUDIO_ACCESS_TOKEN.
+services:
+  studio:
+    build: .
+    ports:
+      - "127.0.0.1:8765:8765"   # this machine only. Change to "8765:8765" to expose it on your LAN (see README, Docker section)
+    environment:
+      ADSTUDIO_ACCESS_TOKEN: ${ADSTUDIO_ACCESS_TOKEN:?copy .env.example to .env and set ADSTUDIO_ACCESS_TOKEN}
+      ADSTUDIO_OLLAMA_URL: ${ADSTUDIO_OLLAMA_URL:-http://host.docker.internal:11434}
+      ADSTUDIO_ALLOWED_HOSTS: ${ADSTUDIO_ALLOWED_HOSTS:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # reach Ollama running on the Docker host (Linux needs this line)
+    volumes:
+      - studio-data:/data
+    restart: unless-stopped
+
+  # Optional: run Ollama in Docker too.  docker compose --profile ollama up -d --build
+  # and set ADSTUDIO_OLLAMA_URL=http://ollama:11434 in .env. Then: docker compose exec ollama ollama pull llama3.1:8b
+  ollama:
+    image: ollama/ollama
+    profiles: ["ollama"]
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  studio-data:
+  ollama-models:

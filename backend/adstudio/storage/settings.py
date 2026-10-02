@@ -1,5 +1,6 @@
 """Key/value settings with validated keys and defaults. Secrets never live here (use keyring)."""
 import json
+import os
 
 from ..core.errors import AppError
 from ..core.timeutil import now_iso
@@ -12,7 +13,7 @@ DEFAULTS: dict[str, object] = {
     "ocr.engine": "auto",
     "ocr.timeout_s": 120.0,
     "review.ocr_retry_below": 0.75,
-    "llm.base_url": "http://127.0.0.1:11434",
+    "llm.base_url": os.environ.get("ADSTUDIO_OLLAMA_URL", "http://127.0.0.1:11434"),  # containers point this at the Ollama host
     "llm.model": "llama3.1:8b",
     "embedding.model": "",
     "automation.allow_webhooks": False,

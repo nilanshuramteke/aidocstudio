@@ -19,3 +19,27 @@ jobs:
         with: { node-version: "20" }
       - run: npm install && npm test && npm run build
         working-directory: frontend
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t adstudio:ci .
+      - name: Smoke test the container
+        run: |
+          set -euo pipefail
+          TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+          # refuses to start without a token (fail closed)
+          if docker run --rm adstudio:ci; then echo "container started without a token"; exit 1; fi
+          docker run -d --name studio -p 127.0.0.1:8765:8765 -e ADSTUDIO_ACCESS_TOKEN="$TOKEN" adstudio:ci
+          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:8765/ && break; sleep 2; done
+          page=$(curl -fsS http://127.0.0.1:8765/)
+          grep -qi "<html" <<<"$page"                                                          # the built frontend is served
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8765/api/v1/health)" = 401   # API needs a session
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8765/?t=wrong')" = 403
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.example' http://127.0.0.1:8765/)" = 403
+          curl -fsS -c jar -o /dev/null "http://127.0.0.1:8765/?t=$TOKEN"
+          curl -fsS -b jar http://127.0.0.1:8765/api/v1/health | tee health.json
+          curl -fsS -c jar2 -o /dev/null "http://127.0.0.1:8765/?t=$TOKEN"                     # token is reusable
+      - name: Container logs
+        if: always()
+        run: docker logs studio || true

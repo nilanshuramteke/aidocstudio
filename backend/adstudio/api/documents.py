@@ -16,6 +16,14 @@ def _c(request: Request):
     return request.app.state.c
 
 
+def _under(path: Path, roots: list[Path]) -> bool:
+    try:
+        real = path.resolve()
+    except OSError:
+        return False
+    return any(real == r or real.is_relative_to(r) for r in roots)
+
+
 @router.post("/import")
 def import_files(request: Request, files: list[UploadFile] = File(...)):
     svc = _c(request).docs
@@ -30,9 +38,13 @@ def import_paths(request: Request, body: dict = Body(...)):
     if not isinstance(paths, list) or not all(isinstance(p, str) for p in paths):
         raise AppError("`paths` must be a list of strings", code="invalid_body")
     svc = _c(request).docs
+    roots = getattr(request.app.state, "import_roots", None)  # set in server mode: only these folders may be read
     results: list[ImportResult] = []
     for raw in paths:
         p = Path(raw)
+        if roots is not None and not _under(p, roots):
+            results.append(ImportResult(raw, "rejected", reason="path not allowed in server mode"))
+            continue
         if p.is_dir():
             targets = sorted(x for x in p.rglob("*") if x.is_file())
         elif p.is_file():
@@ -41,6 +53,9 @@ def import_paths(request: Request, body: dict = Body(...)):
             results.append(ImportResult(raw, "rejected", reason="path not found"))
             continue
         for t in targets:
+            if roots is not None and not _under(t, roots):  # a symlink inside an allowed folder must not escape it
+                results.append(ImportResult(str(t), "rejected", reason="path not allowed in server mode"))
+                continue
             with open(t, "rb") as f:
                 results.append(svc.import_stream(t.name, f, source="upload"))
     return {"results": [r.as_dict() for r in results]}

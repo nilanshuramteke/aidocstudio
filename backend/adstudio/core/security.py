@@ -11,6 +11,8 @@ class SessionAuth:
         self._one_time: set[str] = set()
         self._lock = threading.Lock()
         self.allowed_hosts = allowed_hosts if allowed_hosts is not None else {"127.0.0.1", "localhost", "[::1]"}
+        # Server mode only: a user-supplied secret that works as a reusable launch token (set by main.serve).
+        self.access_token: str | None = None
 
     def issue_one_time(self) -> str:
         t = secrets.token_urlsafe(24)
@@ -19,6 +21,8 @@ class SessionAuth:
         return t
 
     def consume_one_time(self, token: str) -> bool:
+        if self.access_token and secrets.compare_digest(token.encode(), self.access_token.encode()):
+            return True  # server mode: the configured access token can sign in any number of times
         with self._lock:
             if token in self._one_time:
                 self._one_time.discard(token)

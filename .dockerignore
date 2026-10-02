@@ -1,0 +1,12 @@
+.git
+.github
+**/node_modules
+**/__pycache__
+**/*.pyc
+backend/.venv
+backend/adstudio/static
+**/.pytest_cache
+docs/images
+samples
+evals
+*.sqlite*

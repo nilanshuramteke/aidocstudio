@@ -25,7 +25,7 @@ Drop in invoices, contracts, scans, spreadsheets or emails. The app reads them, 
 
 Most "chat with your PDFs" tools upload your files to someone else's server and give you answers you can't check. This one is built for documents that can't leave the building (client invoices, contracts, medical or financial records) and for results you can verify:
 
-- **Nothing leaves your machine.** Loopback-only server, no telemetry, no CDN assets.
+- **Nothing leaves your machine.** Loopback-only by default (Docker/LAN is opt-in and token-protected), no telemetry, no CDN assets.
 - **Every value has evidence.** Extracted fields link to the box on the page, with a confidence score and the reason when something looks wrong.
 - **The model can't make things up silently.** Values are grounded against the OCR text, validated (checksums, dates, totals), and low-confidence ones go to a review queue.
 - **Answers cite their source,** and say "not found" when your documents don't contain the answer.
@@ -73,7 +73,7 @@ Screenshots are generated from a real running app and the fake files in [`sample
 - **One writer, many readers.** SQLite in WAL mode with a single serialized writer. No server, no broker.
 - **Enforced boundaries.** `api → services → providers/storage`, checked in CI with import-linter. OCR, LLM and embeddings sit behind interfaces with fake implementations, so almost everything is tested without a model.
 - **Measured, not claimed.** OCR, extraction and RAG each have an eval script, and the benchmarks that missed their target are recorded as such (see below).
-- **Secure by default.** Loopback only, Host/Origin checks, per-launch session token cookie, strict CSP, no external fonts or CDNs.
+- **Secure by default.** Loopback only unless you opt in, Host/Origin checks, per-launch session token cookie, strict CSP, no external fonts or CDNs.
 
 ## Quick start (Windows)
 
@@ -106,6 +106,21 @@ On macOS/Linux, run `python -m adstudio.main` from `backend/` with the venv acti
 **Options:** `--port`, `--no-browser`, `--data-dir`, `--remember`. Data lives in `~/AI-Document-Studio` unless you set `ADSTUDIO_DATA_DIR`. Originals are **copied** into `files/` (content-addressed); your source files are never modified.
 
 **Encrypting the library:** `python -m adstudio.main encrypt` (also `decrypt`, `unlock`, `forget-key`).
+
+## Run with Docker
+
+```bash
+git clone https://github.com/nilanshuramteke/aidocstudio.git && cd aidocstudio
+cp .env.example .env        # then set ADSTUDIO_ACCESS_TOKEN (the file shows how to generate one)
+docker compose up -d --build
+```
+
+Open `http://localhost:8765/?t=<your token>` once per browser; after that the browser stays signed in. Data lives in the `studio-data` volume, and files dropped into its `inbox/` folder are imported automatically.
+
+- **Ollama:** by default the container talks to Ollama on the Docker host (`host.docker.internal:11434`). To run Ollama in Docker too, use `docker compose --profile ollama up -d --build`, set `ADSTUDIO_OLLAMA_URL=http://ollama:11434` in `.env`, then `docker compose exec ollama ollama pull llama3.1:8b`.
+- **LAN access:** the compose file publishes the port on this machine only. To reach it from other devices, change the port mapping to `"8765:8765"` and set `ADSTUDIO_ALLOWED_HOSTS` to the name or IP you will type in the browser. It is plain HTTP with a single shared token, so use a trusted network or a TLS reverse proxy.
+- **Safety defaults:** the app refuses to listen beyond loopback without a token of 24+ characters, keeps the Host/Origin checks, and in server mode only imports from the `inbox/` folder (plus folders listed in `ADSTUDIO_IMPORT_ROOTS`).
+- Without Docker, the same mode is `ADSTUDIO_ACCESS_TOKEN=... python -m adstudio.main --host 0.0.0.0 --no-browser`.
 
 ## Development
 
@@ -154,9 +169,9 @@ paperless-ngx is excellent for archiving and tagging. This project is aimed at e
 - Tesseract accuracy is unmeasured (no binary on the dev machine). Handwriting is not supported.
 - Document parsing runs in-process, not in a sandboxed subprocess.
 - SQLCipher encrypts the database only; original files in `files/` are not encrypted (use BitLocker or FileVault).
-- Not built: LAN / multi-user mode, plugin loader, auto-updater, system tray, installer packaging, LLM reranker.
+- Not built: multi-user accounts (server mode has one shared sign-in), TLS termination, plugin loader, auto-updater, system tray, installer packaging, LLM reranker.
 - Evals use a handful of clean documents; they have not been run on messy real-world scans.
-- Docker is not supported: the server deliberately binds to loopback only, and a LAN/container mode is not built.
+- Docker support is new: the image is built and smoke-tested in CI, but only lightly used. Server mode serves plain HTTP with one shared access token and no user accounts; keep it on a trusted network or behind a TLS reverse proxy. The library-encryption keychain flow is not available in containers.
 - Developed on Windows; CI runs the test suite on Windows, Linux and macOS (macOS has no semantic search with the python.org Python, see Quick start).
 
 ## License
