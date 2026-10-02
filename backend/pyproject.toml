@@ -7,6 +7,7 @@ name = "ai-doc-studio"
 version = "0.0.1"
 description = "Local-first document intelligence studio"
 requires-python = ">=3.11"
+license = { text = "AGPL-3.0-or-later" }
 dependencies = [
   "fastapi>=0.110",
   "uvicorn>=0.29",

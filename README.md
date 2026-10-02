@@ -100,4 +100,4 @@ Measured on a Windows 11 dev machine (22 cores, 32 GB RAM, CPU only). These are 
 
 ## License
 
-Not yet chosen. Note that PyMuPDF is AGPL-3.0, so a distributed build is bound by AGPL unless you swap it for `pypdfium2` (the page renderer is behind an interface) or buy a commercial PyMuPDF license.
+[AGPL-3.0](LICENSE). The app uses PyMuPDF, which is AGPL-3.0, so the combined work is distributed under the same license. If you host a modified version as a service, you must make your changes available.
