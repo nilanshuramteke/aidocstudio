@@ -1,0 +1,22 @@
+{
+  "rapidocr": {
+    "clean": {
+      "CER": 0.0487,
+      "WER": 0.38,
+      "sec_per_page": 5.13
+    },
+    "noisy": {
+      "CER": 0.0698,
+      "WER": 0.69,
+      "sec_per_page": 3.94
+    },
+    "skewed": {
+      "CER": 0.0475,
+      "WER": 0.413,
+      "sec_per_page": 4.16
+    }
+  },
+  "tesseract": {
+    "skipped": "Tesseract binary not found; install from UB-Mannheim builds"
+  }
+}

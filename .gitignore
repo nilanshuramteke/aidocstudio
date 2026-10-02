@@ -1,0 +1,13 @@
+backend/.venv/
+backend/adstudio/static/
+__pycache__/
+*.pyc
+.pytest_cache/
+frontend/node_modules/
+.env
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+dist/
+build/
+.vscode/

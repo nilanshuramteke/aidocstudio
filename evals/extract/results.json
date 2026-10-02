@@ -1,0 +1,8 @@
+{
+  "model": "llama3.1:8b",
+  "type_accuracy": 1.0,
+  "field_recall": 1.0,
+  "values_extracted": 20,
+  "low_confidence_values": 0,
+  "seconds": 38.0
+}

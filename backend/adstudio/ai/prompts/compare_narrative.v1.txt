@@ -1,0 +1,3 @@
+Summarize the differences between the documents using ONLY the comparison table below. Do not add facts that are not in the table. Write 2-4 short sentences. If nothing differs, say so.
+
+{table}
