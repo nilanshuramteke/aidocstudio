@@ -130,7 +130,7 @@ def test_encrypt_in_place_keeps_everything_working_and_hides_content(tmp_path, k
         crypt.encrypt_in_place(cfg.data_root, "short")
     assert weak.value.code == "weak_passphrase"
     res = crypt.encrypt_in_place(cfg.data_root, PASS)
-    assert res["encrypted"] and res["tables"]["documents"] == 2 and res["tables"]["chunks"] >= 2 and res["tables"]["chunk_vec"] >= 2
+    assert res["encrypted"] and res["tables"]["documents"] == 2 and res["tables"]["chunks"] >= 2 and (res["tables"].get("chunk_vec", 2) >= 2)
     assert crypt.is_encrypted(cfg.data_root) and os.path.exists(res["plaintext_copy"])
     raw = raw_db(cfg)
     assert raw[:15] != b"SQLite format 3" and SECRET_WORD.encode() not in raw and b"INV-20491" not in raw and b"documents" not in raw

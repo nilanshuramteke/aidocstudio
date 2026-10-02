@@ -190,6 +190,12 @@ class ConceptEmbedding:
         return ProviderHealth(True, self.model_id)
 
 
+from adstudio.storage.db import vec_available
+
+# python.org builds of Python (used by setup-python on macOS) cannot load SQLite extensions.
+requires_vec = pytest.mark.skipif(not vec_available(), reason="sqlite-vec cannot be loaded (Python built without extension loading)")
+
+
 @pytest.fixture
 def sem_client(config):
     emb = ConceptEmbedding()
@@ -200,6 +206,7 @@ def sem_client(config):
         yield tc
 
 
+@requires_vec
 def test_semantic_finds_meaning_without_shared_keywords(sem_client):
     car = upload(sem_client, "garage.txt", b"The truck and the car were parked inside the garage overnight.")["document_id"]
     food = upload(sem_client, "dinner.txt", b"We ate paneer and naan while dining out with friends.")["document_id"]
@@ -216,6 +223,7 @@ def test_semantic_finds_meaning_without_shared_keywords(sem_client):
     assert food
 
 
+@requires_vec
 def test_hybrid_ranks_documents_found_by_both_lists_first(sem_client):
     upload(sem_client, "a.txt", b"rent payment for the lease agreement")
     upload(sem_client, "b.txt", b"rent was mentioned once in a long story about gardens and weather and trees " * 3)
@@ -225,6 +233,7 @@ def test_hybrid_ranks_documents_found_by_both_lists_first(sem_client):
     assert titles(r)[0] == "a"
 
 
+@requires_vec
 def test_embedding_model_change_triggers_reembed(sem_client):
     upload(sem_client, "one.txt", b"the car was fast")
     upload(sem_client, "two.txt", b"payment due on the lease")

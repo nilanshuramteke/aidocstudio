@@ -100,7 +100,7 @@ ollama pull nomic-embed-text
 
 then set them under **Settings → Models** (the embedding model is empty by default, which means keyword-only search).
 
-On macOS/Linux, run `python -m adstudio.main` from `backend/` with the venv active.
+On macOS/Linux, run `python -m adstudio.main` from `backend/` with the venv active. On macOS, semantic search needs a Python that can load SQLite extensions (Homebrew or pyenv builds; the python.org installer cannot), otherwise search falls back to keyword-only.
 
 **Options:** `--port`, `--no-browser`, `--data-dir`, `--remember`. Data lives in `~/AI-Document-Studio` unless you set `ADSTUDIO_DATA_DIR`. Originals are **copied** into `files/` (content-addressed); your source files are never modified.
 
