@@ -1,7 +1,10 @@
 """Workflow rules and watch folders."""
+from pathlib import Path
+
 from fastapi import APIRouter, Body, Request
 
 from ..core.errors import AppError
+from .documents import _under
 
 router = APIRouter()
 
@@ -58,6 +61,10 @@ def watch_folders(request: Request):
 
 @router.post("/watch-folders")
 def create_watch_folder(request: Request, body: dict = Body(...)):
+    roots = getattr(request.app.state, "import_roots", None)  # set in server mode: only these folders may be watched
+    path = body.get("path", "")
+    if roots is not None and not (isinstance(path, str) and _under(Path(path), roots)):
+        raise AppError("That folder is not allowed in server mode", code="path_not_allowed", status=403)
     return _c(request).watch.create(body.get("path", ""), bool(body.get("recursive", True)), body.get("after_import", "leave"),
                                     bool(body.get("enabled", True)))
 

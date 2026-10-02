@@ -49,3 +49,16 @@ def test_import_paths_limited_to_allowed_roots_in_server_mode(client, tmp_path):
     assert by_status.count("created") == 1  # only ok.txt; the symlink and the outside file are refused
     assert by_status.count("rejected") == len(res) - 1 and len(res) >= 2
     assert all("server mode" in (r.get("reason") or "") for r in res if r["status"] == "rejected")
+
+
+def test_watch_folders_limited_to_allowed_roots_in_server_mode(client, tmp_path):
+    inbox, outside = tmp_path / "inbox", tmp_path / "outside"
+    inbox.mkdir()
+    outside.mkdir()
+    client.app.state.import_roots = [inbox.resolve()]
+    bad = client.post("/api/v1/watch-folders", json={"path": str(outside), "after_import": "delete"})
+    assert bad.status_code == 403 and bad.json()["code"] == "path_not_allowed"
+    assert client.post("/api/v1/watch-folders", json={"path": 5}).status_code == 403
+    assert client.post("/api/v1/watch-folders", json={"path": str(inbox)}).status_code == 200
+    client.app.state.import_roots = None  # normal (loopback) mode is unrestricted
+    assert client.post("/api/v1/watch-folders", json={"path": str(outside)}).status_code == 200
